@@ -9,9 +9,12 @@ echo "📋 Starting Gemini CLI code inspector..."
 
 while true; do
     echo "🔍 Scanning codebase..."
-    OUTPUT=$(gemini "Scan this codebase and list specific improvements in markdown TODO format only. Path: $PROJECT_PATH")
+    cd codebase
+    OUTPUT=$(gemini -a -p "Scan this codebase and list specific improvements in markdown TODO format only.")
+    cd ..
 
-    echo -e "\n## Open\n$OUTPUT" > "$TODO_FILE"
+    echo "## Open" > "$TODO_FILE"
+    echo "$OUTPUT" >> "$TODO_FILE"
     echo "✅ Updated $TODO_FILE"
     sleep 60  # scan interval
 done

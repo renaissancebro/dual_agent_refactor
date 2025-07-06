@@ -1,126 +1,165 @@
 # dual_agent_refactor
-🧠 Dual-Agent Coding Workflow (Gemini CLI + Claude Code + Custom Agents)
+
+🧠 Dual-Agent Coding Workflow (Gemini CLI + Claude Code + Manual Control)
 
 This setup allows you to combine:
-	•	Gemini CLI (code analyzer)
-	•	Claude Code (code editor/fixer)
-	•	Your own GPT-powered AutoGen agent (planner/refactor engine)
+• Gemini CLI (code analyzer)
+• Claude Code (code editor/fixer)
+• Manual workflow control with human oversight
 
-…to refactor, organize, and improve a codebase autonomously with preview mode and human oversight.
+…to refactor, organize, and improve a codebase with full control over the process.
 
 ⸻
 
 🗂 Folder Structure
 
-refactor_system/
+dual_agent_refactor/
 ├── postbox/
-│   ├── todo.md               # Gemini appends todos here
-│   └── completed-todos.md   # Claude moves resolved items here
+│ ├── todo.md # Gemini appends todos here
+│ └── completed-todos.md # Claude moves resolved items here
 ├── scripts/
-│   ├── run_gemini.sh        # Starts Gemini CLI in watcher mode
-│   └── run_claude.sh        # Starts Claude Code in fixer mode
-├── refactor_agent/          # Your custom agent logic
-│   └── ...
-├── refactor_target/         # Target FastAPI or project directory
+│ ├── workflow.sh # Main interactive workflow menu
+│ ├── scan.sh # Manual Gemini scanner
+│ ├── fix-next.sh # Manual Claude fixer (one TODO at a time)
+│ ├── inspector.sh # Legacy auto-scanner (runs every 60s)
+│ └── fixer.sh # Legacy auto-fixer (runs every 60s)
+├── codebase/ # Example target directory (optional)
 └── README.md
 
+⸻
+
+✅ Step-by-Step Manual Workflow
+
+1. 🔍 **Start the Workflow**
+
+   ```bash
+   ./scripts/workflow.sh
+   ```
+
+   This opens an interactive menu showing your current directory.
+
+2. 🔍 **Scan Your Code**
+
+   - **Option A**: Scan current directory
+
+     - Choose `1` from menu
+     - Gemini analyzes all files in current directory
+
+   - **Option B**: Scan specific files
+     - Choose `2` from menu
+     - Enter file names: `main.py test.py utils.py`
+     - Gemini analyzes only those files
+
+3. 🛠️ **Fix Issues One by One**
+
+   - Choose `3` from menu
+   - Claude shows you the fix for the first TODO
+   - You decide whether to apply it
+   - Repeat until all TODOs are done
+
+4. 📋 **Monitor Progress**
+   - Choose `4` to view current TODOs
+   - Choose `5` to view completed fixes
+   - Choose `6` to reset workflow
 
 ⸻
 
-✅ Step-by-Step Workflow
+🚀 **Direct Command Usage**
 
-1. 🔍 Gemini CLI — Continuous Analyzer
+```bash
+# Navigate to your project
+cd /path/to/your/project
 
-Use this to:
-	•	Detect code smells, style issues, bad loops, etc.
-	•	Append each finding as an item in postbox/todo.md under “Open”
+# Scan current directory
+./scripts/scan.sh
 
-cd refactor_system
-sh scripts/run_gemini.sh
+# Scan specific files
+./scripts/scan.sh main.py test.py utils.py
 
-You can also manually prompt Gemini:
+# Fix next TODO
+./scripts/fix-next.sh
 
-gemini "Scan all files in refactor_target and append any needed improvements to postbox/todo.md"
-
-2. 🛠 Claude Code — Problem Solver
-
-Claude watches for open TODOs, then:
-	•	Fixes the issue in files
-	•	Records explanation in completed-todos.md
-	•	Moves the TODO from todo.md
-
-sh scripts/run_claude.sh
-
-It acts like a committed AI dev.
-
-3. 👨‍💻 You — Preview + Confirm
-
-Run a preview diff using:
-
-diff -u refactor_target/main.py refactor_target/main.py.bak
-
-Or for multiple files:
-
-find refactor_target -name "*.py" -exec diff -u {} {}.bak \;
-
-If satisfied, confirm changes (optional git commit, etc).
-
-4. 🤖 Add Custom Agent (e.g. GPT Refactor Agent)
-
-You can:
-	•	Pass todo.md into it for planning
-	•	Let it suggest module splits, utils folder creation
-	•	Optionally make it output FastAPI-compatible endpoint ideas
-
-You can invoke it via CLI script or notebook:
-
-python refactor_agent/main_agent.py
-
+# Start interactive workflow
+./scripts/workflow.sh
+```
 
 ⸻
 
-💡 Example Use Case: FastAPI Refactor
+💡 **Example Use Cases**
 
-Say you want to extract a refactor() function and wrap it as an API:
-	1.	Add FastAPI app in refactor_target/api.py
-	2.	Add def refactor_code(code: str) -> dict: to utils
-	3.	Add a TODO to postbox: “Make /refactor POST endpoint to wrap refactor_code()”
-	4.	Claude will implement
-	5.	Review via diff, then test
+**FastAPI Project Refactor:**
+
+```bash
+cd ~/my-fastapi-project
+./scripts/workflow.sh
+# Choose 2 → Enter: app.py models.py routes.py
+# Choose 3 → Review and apply fixes
+```
+
+**Python Script Cleanup:**
+
+```bash
+cd ~/my-scripts
+./scripts/scan.sh *.py
+./scripts/fix-next.sh
+```
+
+**Multi-language Project:**
+
+```bash
+cd ~/my-project
+./scripts/scan.sh src/**/*.py src/**/*.js
+./scripts/fix-next.sh
+```
 
 ⸻
 
-✨ CLI Alias (optional)
+🔐 **Safety Features**
 
-Add to .zshrc:
+- **Manual Approval**: You see each fix before applying
+- **File Permissions**: Claude asks permission before writing files
+- **Current Directory**: Works from any directory, not just hardcoded paths
+- **Flexible Targeting**: Scan all files or specific files
+- **Progress Tracking**: See what's done and what's left
 
-alias runflow="cd ~/refactor_system && tmux new-session \; \
-  split-window -h 'sh scripts/run_gemini.sh' \; \
-  split-window -v 'sh scripts/run_claude.sh' \; \
-  select-pane -t 0 && clear"
+⸻
+
+⚙️ **Legacy Auto-Mode (Optional)**
+
+If you want the original automatic workflow:
+
+```bash
+# Start both agents in tmux
+./tmux-launch.sh
+
+# Or run individually
+./scripts/inspector.sh  # Gemini scanner (every 60s)
+./scripts/fixer.sh      # Claude fixer (every 60s)
+```
+
+⸻
+
+✨ **CLI Alias (Optional)**
+
+Add to `~/.zshrc`:
+
+```bash
+alias dualflow="cd ~/dual_agent_refactor && ./scripts/workflow.sh"
+```
 
 Then run:
 
-runflow
-
-
-⸻
-
-🔐 Safety: Preview Mode Always
-
-Every edit is saved as file.py.bak before replacement. You can always run:
-
-diff -u file.py file.py.bak
-
-Or use git to version.
+```bash
+dualflow
+```
 
 ⸻
 
-🔁 Next Additions
-	•	Integrate GPT Planner (third agent)
-	•	Add test bot
-	•	Use watch to auto-preview changes
-	•	Expose endpoints via FastAPI and monetize with Stripe
+🔁 **Next Additions**
+• Add test generation agent
+• Integrate with git for version control
+• Add support for different programming languages
+• Create web interface for workflow management
 
 ⸻
 
