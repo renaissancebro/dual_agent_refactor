@@ -16,9 +16,11 @@ else
     echo "📁 Files: $@"
     echo ""
 
-    # Scan specific files
+        # Scan specific files
     FILES_ARG=""
     for file in "$@"; do
+        # Handle fzf output which may have newlines
+        file=$(echo "$file" | tr '\n' ' ' | xargs)
         FILES_ARG="$FILES_ARG $file"
     done
 

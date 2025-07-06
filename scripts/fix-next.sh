@@ -6,6 +6,13 @@ DONE_FILE="./postbox/completed-todos.md"
 
 echo "🛠️ Manual TODO fixer - one item at a time"
 
+# Check if fzf is available
+if ! command -v fzf &> /dev/null; then
+    FZF_AVAILABLE=false
+else
+    FZF_AVAILABLE=true
+fi
+
 # Get the first TODO item
 FIRST_TODO=$(grep "^- \[ \]" "$TODO_FILE" | head -1 | sed 's/^ *- \[ \] *//')
 
@@ -19,6 +26,30 @@ echo "📝 Next TODO to fix:"
 echo "   $FIRST_TODO"
 echo ""
 
+# Ask if user wants to specify a file to focus on
+read -p "🎯 Do you want to specify a file to focus on? (y/n): " -n 1 -r
+echo
+
+TARGET_FILE=""
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    if [[ "$FZF_AVAILABLE" == true ]]; then
+        echo "Select file to focus on (optional - press Enter to skip):"
+        TARGET_FILE=$(fzf --query "." --prompt="Focus on file > " --preview="echo {}" --preview-window=up:3)
+        if [[ -n "$TARGET_FILE" ]]; then
+            echo "📁 Focusing on: $TARGET_FILE"
+        else
+            echo "⚠️ No file selected, will work on all files"
+        fi
+    else
+        read -p "Enter file name to focus on (or press Enter to skip): " TARGET_FILE
+        if [[ -n "$TARGET_FILE" ]]; then
+            echo "📁 Focusing on: $TARGET_FILE"
+        else
+            echo "⚠️ No file specified, will work on all files"
+        fi
+    fi
+fi
+
 # Ask for confirmation
 read -p "🤔 Do you want Claude to fix this issue? (y/n): " -n 1 -r
 echo
@@ -26,8 +57,15 @@ echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "🔧 Calling Claude to fix: $FIRST_TODO"
 
+    # Build the prompt based on whether a target file was specified
+    if [[ -n "$TARGET_FILE" ]]; then
+        PROMPT="Fix the following issue in this codebase, focusing specifically on the file '$TARGET_FILE':\n\n$FIRST_TODO"
+    else
+        PROMPT="Fix the following issue in this codebase:\n\n$FIRST_TODO"
+    fi
+
     # Get the fix from Claude (without file permissions for now)
-    FIX=$(claude -p "Fix the following issue in this codebase:\n\n$FIRST_TODO")
+    FIX=$(claude -p "$PROMPT")
 
     echo ""
     echo "💡 Claude's suggested fix:"
@@ -42,10 +80,19 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 
     if [[ $REPLY =~ ^[Yy]$ ]]; then
         echo "🔧 Applying fix with file permissions..."
-        claude --add-dir . -p "Apply this fix to the codebase:\n\n$FIX"
+
+        # Apply fix with target file focus if specified
+        if [[ -n "$TARGET_FILE" ]]; then
+            claude --add-dir . -p "Apply this fix to the codebase, focusing on '$TARGET_FILE':\n\n$FIX"
+        else
+            claude --add-dir . -p "Apply this fix to the codebase:\n\n$FIX"
+        fi
 
         # Record the fix
         echo "### Fixed: $FIRST_TODO" >> "$DONE_FILE"
+        if [[ -n "$TARGET_FILE" ]]; then
+            echo "**Target file:** $TARGET_FILE" >> "$DONE_FILE"
+        fi
         echo "" >> "$DONE_FILE"
         echo "$FIX" >> "$DONE_FILE"
         echo "" >> "$DONE_FILE"

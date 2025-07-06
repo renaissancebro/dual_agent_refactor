@@ -1,11 +1,16 @@
 -e ## Open
-- [ ] **Refactor `main.py`:**
-    - [ ] **Configuration:** Move hardcoded values like `API_KEY`, `DEBUG_MODE`, `user_id`, and `filename` out of the code. Use a library like `python-dotenv` to load them from a `.env` file.
-    - [ ] **Security:** The `API_KEY` is hardcoded. It should be loaded securely from an environment variable and never be committed to version control.
-    - [ ] **Error Handling:** Improve error handling in `get_user_data` and `save_to_file` to be more specific and provide clearer error messages instead of catching generic `Exception`.
-    - [ ] **Inefficient Code:** Refactor the deeply nested loops in `process_data` for better readability and performance. A flatter data processing approach or list comprehensions could be used.
-    - [ ] **Unused Globals:** The `CACHE` global variable is defined but never used. It should be removed or implemented.
-    - [ ] **Separation of Concerns:** The script mixes API calls, data processing, and file I/O. Structure the code into more focused functions or classes.
-    - [ ] **FastAPI Implementation:** The `requirements.txt` includes `fastapi` and `uvicorn`, and the file comment mentions FastAPI, but the code is a simple script. Refactor it to be a proper FastAPI application with endpoints.
-- [ ] **Fix or Remove `test.py`:**
-    - [ ] The file `test.py` contains invalid code (`print(hh)`) and will raise a `NameError`. It should be replaced with actual unit tests for the functions in `main.py` or be deleted if it's not needed.
+### General
+- [ ] Restructure the project into a proper FastAPI application instead of a simple script.
+- [ ] Use `python-dotenv` to load secrets and configurations like `API_KEY` from a `.env` file instead of hardcoding them.
+- [ ] Eliminate global variables (`API_KEY`, `DEBUG_MODE`, `CACHE`).
+
+### `main.py`
+- [ ] Refactor the nested loops in `process_data` to improve readability and efficiency.
+- [ ] Make `user_id` and `filename` in `main()` configurable instead of being hardcoded.
+- [ ] Improve error handling to be more specific (e.g., catch `IOError` in `save_to_file` instead of generic `Exception`).
+- [ ] Implement Pydantic models for data validation, especially for the expected structure of `user_data`.
+
+### `test.py`
+- [ ] Replace the invalid code (`print(hh)`) with actual unit tests.
+- [ ] Implement tests for `process_data` and `calculate_total` using a testing framework like `pytest`.
+- [ ] Mock the `requests.get` call to test `get_user_data` without making real network calls.
