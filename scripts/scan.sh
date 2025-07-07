@@ -1,12 +1,18 @@
 #!/bin/bash
 # scan.sh - Manual code scanner using Gemini CLI
 
-TODO_FILE="./postbox/todo.md"
+# Get the target directory (where we're working)
+TARGET_DIR="$(pwd)"
+TODO_FILE="$TARGET_DIR/postbox/todo.md"
+
+# Create postbox directory if it doesn't exist
+mkdir -p "$TARGET_DIR/postbox"
 
 # Check if files were specified as arguments
 if [[ $# -eq 0 ]]; then
     echo "🔍 Scanning current directory with Gemini..."
-    echo "💡 Tip: You can specify files like: ./scripts/scan.sh file1.py file2.py"
+    echo "📁 Target: $TARGET_DIR"
+    echo "💡 Tip: You can specify files like: scan.sh file1.py file2.py"
     echo ""
 
     # Scan current directory
@@ -16,7 +22,7 @@ else
     echo "📁 Files: $@"
     echo ""
 
-        # Scan specific files
+    # Scan specific files
     FILES_ARG=""
     for file in "$@"; do
         # Handle fzf output which may have newlines

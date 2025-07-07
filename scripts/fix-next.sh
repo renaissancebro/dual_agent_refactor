@@ -1,10 +1,16 @@
 #!/bin/bash
 # fix-next.sh - Manual fixer that processes one TODO at a time
 
-TODO_FILE="./postbox/todo.md"
-DONE_FILE="./postbox/completed-todos.md"
+# Get the target directory (where we're working)
+TARGET_DIR="$(pwd)"
+TODO_FILE="$TARGET_DIR/postbox/todo.md"
+DONE_FILE="$TARGET_DIR/postbox/completed-todos.md"
 
 echo "🛠️ Manual TODO fixer - one item at a time"
+echo "📁 Target: $TARGET_DIR"
+
+# Create postbox directory if it doesn't exist
+mkdir -p "$TARGET_DIR/postbox"
 
 # Check if fzf is available
 if ! command -v fzf &> /dev/null; then
@@ -65,7 +71,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     fi
 
     # Get the fix from Claude (without file permissions for now)
-    FIX=$(claude -p "$PROMPT")
+    FIX=$(claude "$PROMPT")
 
     echo ""
     echo "💡 Claude's suggested fix:"
@@ -83,9 +89,9 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
 
         # Apply fix with target file focus if specified
         if [[ -n "$TARGET_FILE" ]]; then
-            claude --add-dir . -p "Apply this fix to the codebase, focusing on '$TARGET_FILE':\n\n$FIX"
+            claude --add-directory "$TARGET_DIR" "Apply this fix to the codebase, focusing on '$TARGET_FILE':\n\n$FIX"
         else
-            claude --add-dir . -p "Apply this fix to the codebase:\n\n$FIX"
+            claude --add-directory "$TARGET_DIR" "Apply this fix to the codebase:\n\n$FIX"
         fi
 
         # Record the fix

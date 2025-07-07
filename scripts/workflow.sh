@@ -1,6 +1,11 @@
 #!/bin/bash
 # workflow.sh - Main manual workflow script
 
+# Get the directory where this script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Get the target directory (where we want to work on code)
+TARGET_DIR="$(pwd)"
+
 # Check if fzf is installed
 if ! command -v fzf &> /dev/null; then
     echo "⚠️  fzf is not installed. Install it with: brew install fzf"
@@ -12,7 +17,8 @@ fi
 
 echo "🚀 Dual-Agent Manual Workflow"
 echo "=============================="
-echo "📍 Current directory: $(pwd)"
+echo "📍 Target directory: $TARGET_DIR"
+echo "🔧 Scripts from: $SCRIPT_DIR"
 echo ""
 
 while true; do
@@ -34,23 +40,24 @@ while true; do
     case $REPLY in
         1)
             echo "🔍 Running code scan on current directory..."
-            ./scripts/scan.sh
+            cd "$TARGET_DIR" && "$SCRIPT_DIR/scan.sh"
             ;;
         2)
             echo "🔍 Running code scan on specific files..."
             if [[ "$FZF_AVAILABLE" == true ]]; then
                 echo "Select files to scan (use Tab to select multiple, Enter to confirm):"
+                cd "$TARGET_DIR"
                 FILES=$(fzf --multi --query "." --prompt="Scan files > " --preview="echo {}" --preview-window=up:3)
                 if [[ -n "$FILES" ]]; then
                     echo "📁 Selected files: $FILES"
-                    ./scripts/scan.sh $FILES
+                    "$SCRIPT_DIR/scan.sh" $FILES
                 else
                     echo "⚠️ No files selected."
                 fi
             else
                 read -p "Enter file names (space-separated): " FILES
                 if [[ -n "$FILES" ]]; then
-                    ./scripts/scan.sh $FILES
+                    cd "$TARGET_DIR" && "$SCRIPT_DIR/scan.sh" $FILES
                 else
                     echo "❌ No files specified"
                 fi
@@ -58,18 +65,19 @@ while true; do
             ;;
         3)
             echo "🛠️  Running fixer..."
-            ./scripts/fix-next.sh
+            cd "$TARGET_DIR" && "$SCRIPT_DIR/fix-next.sh"
             ;;
         4)
             echo "🎯 Direct file editing..."
             if [[ "$FZF_AVAILABLE" == true ]]; then
                 echo "Select file to edit:"
+                cd "$TARGET_DIR"
                 TARGET_FILE=$(fzf --query "." --prompt="Edit file > " --preview="echo {}" --preview-window=up:3)
                 if [[ -n "$TARGET_FILE" ]]; then
                     echo "📁 Editing: $TARGET_FILE"
                     read -p "Describe what you want to change: " EDIT_REQUEST
                     if [[ -n "$EDIT_REQUEST" ]]; then
-                        claude --add-dir . -p "Edit the file '$TARGET_FILE' with the following request:\n\n$EDIT_REQUEST"
+                        claude --add-directory "$TARGET_DIR" "Edit the file '$TARGET_FILE' with the following request:\n\n$EDIT_REQUEST"
                         echo "✅ Edit applied!"
                     else
                         echo "❌ No edit request provided"
@@ -82,7 +90,7 @@ while true; do
                 if [[ -n "$TARGET_FILE" ]]; then
                     read -p "Describe what you want to change: " EDIT_REQUEST
                     if [[ -n "$EDIT_REQUEST" ]]; then
-                        claude --add-dir . -p "Edit the file '$TARGET_FILE' with the following request:\n\n$EDIT_REQUEST"
+                        claude --add-directory "$TARGET_DIR" "Edit the file '$TARGET_FILE' with the following request:\n\n$EDIT_REQUEST"
                         echo "✅ Edit applied!"
                     else
                         echo "❌ No edit request provided"
@@ -94,16 +102,16 @@ while true; do
             ;;
         5)
             echo "📋 Current TODOs:"
-            if [[ -f "./postbox/todo.md" ]]; then
-                cat "./postbox/todo.md"
+            if [[ -f "$TARGET_DIR/postbox/todo.md" ]]; then
+                cat "$TARGET_DIR/postbox/todo.md"
             else
                 echo "   No todo.md file found"
             fi
             ;;
         6)
             echo "✅ Completed fixes:"
-            if [[ -f "./postbox/completed-todos.md" ]]; then
-                cat "./postbox/completed-todos.md"
+            if [[ -f "$TARGET_DIR/postbox/completed-todos.md" ]]; then
+                cat "$TARGET_DIR/postbox/completed-todos.md"
             else
                 echo "   No completed-todos.md file found"
             fi
@@ -113,8 +121,9 @@ while true; do
             read -p "Are you sure? This will clear all TODOs and completed items (y/n): " -n 1 -r
             echo ""
             if [[ $REPLY =~ ^[Yy]$ ]]; then
-                > "./postbox/todo.md"
-                > "./postbox/completed-todos.md"
+                mkdir -p "$TARGET_DIR/postbox"
+                > "$TARGET_DIR/postbox/todo.md"
+                > "$TARGET_DIR/postbox/completed-todos.md"
                 echo "✅ Workflow reset!"
             else
                 echo "❌ Reset cancelled"
